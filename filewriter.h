@@ -13,9 +13,9 @@ class FileWriter
 public:
     FileWriter(std::vector<QString> eipTemplateV,
                std::map<QString, QString> identificationData);
-    QString writeSelectedDataToFile(std::vector<DataFromSheet> &sheetData,
-                                 const QStandardItemModel* treeModel, QString fileName);
-
+    QString writeDataToFile(std::vector<DataFromSheet>& sheetData,
+                            const QStandardItemModel *treeModel, QString fileName,
+                            QString genCode = nullptr);
     QString analyzeSheetData(DataFromSheet &sheetData,
                                       QStandardItem* root);
     QString analyzeMonthData(std::pair<const HeaderDate, std::vector<std::vector<QString> > > &monthItem,
@@ -29,11 +29,14 @@ public:
     std::pair<const HeaderDate, std::vector<std::vector<QString> > > getMonthPair(std::map<HeaderDate, std::vector<std::vector<QString>>>& dataBlock,
                                                                                       int i);
     QStringList getGenSelection();
+    QStringList getGenCodes();
 
 private:
     std::vector<QString> eipTemplate;
     std::map<QString, QString> idData;
     QFile file;
+    bool writeToGenExport = false;
+    QString genExportCode = "";
 
     enum EipID{OPERATIONCODE = 0, CODE = 1, AMOUNT = 2, MAKER = 3, DATE = 4, DETAILS = 5, COST = 6};
     enum Options{ALL = 0, NEW = 1};

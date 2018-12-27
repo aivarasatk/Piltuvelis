@@ -15,18 +15,25 @@ public:
     explicit ExportWindow(QStringList genOptions, QWidget *parent = nullptr);
     ~ExportWindow();
 
+    bool getSuccess(){ return success;}
+    bool generateGenFile() { return exportToGen; }
+    int getSelectedGenIndex(){ return genSelectionIndex; }
     void reset();
 
 signals:
     void passControlToMain();
 private slots:
     void changeFileSelectVisability(int state);
+    void showGenFileSelection(int state);
     void selectFile();
     void continuePressed();
 
+
 private:
+    bool success = false;
     int genSelectionIndex = -1;
     bool performFileCheck = false;
+    bool exportToGen = false;
     QString selectedFile;
     //pagrindinis isdestymas
     QVBoxLayout* mainLayout;
@@ -38,6 +45,8 @@ private:
 
     //eip failo pasirinkimo UI
     QString text2 = "Vykdyti tikrinimą prieš keliant";
+    QString textExportToGenFile = "Sukurti GEN failo importą iš pasirinktų";
+    QCheckBox* optionExportToGen;
     QCheckBox* optionCheckFiles;
     QString text3 = "Pasirinkite mėnesinių + GEN failą:";
     QLabel* eipFileSelectionText;

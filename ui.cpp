@@ -10,6 +10,7 @@
 #include <QStandardItem>
 #include <QDir>
 #include <QFileDialog>
+#include <QObject>
 
 #include <QThread>
 #include <QtConcurrent>
@@ -48,7 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(saveSelectedFiles, SIGNAL(clicked(bool)),//nuspaudus mygtuka nuskaitomi keli failai
             this, SLOT(loadFiles()));
 
-    connect(this, filesLoaded,
+    connect(this, &MainWindow::filesLoaded,
             [this](){searchButton->setEnabled(true);});
 
     connect(this, SIGNAL(filesLoaded()),//issaugojus failu pasirinkima rodomi sheet pasitrinkimai
@@ -56,22 +57,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(treeModel, SIGNAL(itemChanged(QStandardItem*)),
             this, SLOT(checkItemChildren(QStandardItem*)));
-
-    /*connect(&futureWatcher, &QFutureWatcher<int>::finished, [this](){//sujungiam worker thread pabaiga su erroru spaudinimu
-        if(futureWatcher.result() == TreeCreateError::NO_SHEETS_SELECTED){
-            QMessageBox::information(this, "Klaida", "Nepasirinkti lapai");
-        }else if(futureWatcher.result() == TreeCreateError::FAILED_TO_READ_GEN_DATA){
-            QMessageBox::warning(this, "Klaida", "Nepavyko nuskaityt gamybos plano");
-        }else if(futureWatcher.result() == TreeCreateError::BAD_PRODUCT_AMOUNT){
-            resetLayout();
-            QMessageBox::information(this, "Klaida", treeCreationDataError, "Baigti");
-        }else if(futureWatcher.result() == TreeCreateError::DUPLICATE_EXISTANCE){
-            QMessageBox::critical(this, "Klaida", treeCreationDataError);
-            resetLayout();
-        }else if(futureWatcher.result() == TreeCreateError::ALL_GOOD){
-            exportButton->setEnabled(true);
-        }
-    });*/
 
     setWindowTitle("Piltuvėlis");
     resize(1280,720);
@@ -206,21 +191,18 @@ void MainWindow::showContinueButton(){
 }
 
 void MainWindow::searchButtonPressed(){
-    treeCreationDataError = "";
-    //QFuture<int> future = QtConcurrent::run(this, &visualizeData, treeCreationDataError);
-    //futureWatcher.setFuture(future);
     int result = visualizeData(treeCreationDataError);
     parseLogMessage(result);
 }
 int MainWindow::visualizeData(QString& treeCreationDataError){
-    //auto t1 = Clock::now();
+    treeCreationDataError = "";
     sheetData.clear();
     treeModel->clear();
     optionSelectors.clear();
     std::vector<int> selectedSheetsIndexes;
     for(uint i = 0; i < sheetCheckBoxes.size(); ++i){
         if(sheetCheckBoxes[i]->isChecked()){
-            selectedSheetsIndexes.push_back(i);
+            selectedSheetsIndexes.push_back((int)i);
         }
     }
     if(selectedSheetsIndexes.size() == 0){
@@ -242,11 +224,10 @@ int MainWindow::visualizeData(QString& treeCreationDataError){
             sheetData.clear();
             return TreeCreateError::FAILED_TO_READ_GEN_DATA;
         }
-        //qDebug() << "PreTreView"<<i<<":" <<std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - t1).count();
     }
 
     if(!treeCreationDataError.isEmpty()){
-        QString treeCreationDataError = "Produktai, kuriuose rasta ne skaitinės reikšmės:\n"
+        treeCreationDataError = "Produktai, kuriuose rasta ne skaitinės reikšmės:\n"
                             + treeCreationDataError;
         return TreeCreateError::BAD_PRODUCT_AMOUNT;
     }
@@ -266,23 +247,34 @@ void MainWindow::exportData(){
     QString extension = ".eip";
     QString format = "*" + extension;
     QString selectedFile = QFileDialog::getSaveFileName(this, "Išsaugoti failą",QDir::currentPath(), format);
-
     if(!selectedFile.isEmpty()){
         QStringList genSelection = fileWriter->getGenSelection();
         exportWindow = new ExportWindow(genSelection, this);
         exportWindow->exec();//baigem nustatymus
 
-        QString sheetWriteResult = fileWriter->writeSelectedDataToFile(sheetData, treeModel, selectedFile);
-        if(sheetWriteResult.isEmpty()){
-            QMessageBox::information(this, "", "Eksportas baigtas");
-        }else if(sheetWriteResult == "-1"){
-            QMessageBox::critical(this, "Klaida", "Nepavyko sukurti failo");
-        }else if(!sheetWriteResult.isEmpty()){
-            QMessageBox::warning(this, "Klaida", "Neįrašyti mėnesiai:\n" + sheetWriteResult + "Nėra operacijos kodo");
+        if(exportWindow->getSuccess()){
+            QString sheetWriteResult = fileWriter->writeDataToFile(sheetData, treeModel, selectedFile);
+            if(exportWindow->generateGenFile()){
+                fileWriter->writeDataToFile(sheetData, treeModel, exportFileToGen(selectedFile, extension), fileWriter->getGenCodes()[exportWindow->getSelectedGenIndex()]);
+            }
+            if(sheetWriteResult.isEmpty()){
+                QMessageBox::information(this, "", "Eksportas baigtas");
+            }else if(sheetWriteResult == "-1"){
+                QMessageBox::critical(this, "Klaida", "Nepavyko sukurti failo");
+            }else if(!sheetWriteResult.isEmpty()){
+                QMessageBox::warning(this, "Klaida", "Neįrašyti mėnesiai:\n" + sheetWriteResult + "Nėra operacijos kodo");
+            }
+        }else{
+            QMessageBox::warning(this, "Informacija", "Eksportas neatliktas");
         }
         delete exportWindow;
     }
 
+}
+
+QString MainWindow::exportFileToGen(QString selectedFile, QString extension){
+    int lenToExtension = selectedFile.lastIndexOf('.');
+    return selectedFile.mid(0, lenToExtension) + "_GEN" + extension;
 }
 
 bool MainWindow::checkSheetData(std::vector<std::vector<Duplicate>>& duplicates){
@@ -408,7 +400,7 @@ void MainWindow::checkItemChildren(QStandardItem* item){
         changeOption(item);
     }else if(item->isCheckable() && isOption(item->child(0))){//month item
         changeMonth(item);
-    }else if(item->isCheckable() && item->parent() == 0){
+    }else if(item->isCheckable() && item->parent() == nullptr){
         changeRoot(item);
     }
 
@@ -428,7 +420,10 @@ void MainWindow::fillMonthItemWithChildren(std::vector<std::vector<QString>>& bl
     for(auto& blockRows : blockData){
         QList<QStandardItem*> rowItems;
         QStandardItem* checkBox = new QStandardItem("");
-        checkBox->setCheckable(true);
+
+        if(!blockRows[(int)DataRow::Result::PRODUCTCODE].isEmpty()){
+            checkBox->setCheckable(true);
+        }
         checkBox->setEditable(false);
         rowItems << checkBox;
 
@@ -552,7 +547,7 @@ void MainWindow::updateOptionSelector(QStandardItem* option){
     QStandardItem* parent = option->parent();
     QStandardItem* child;
     if(option->checkState() == Qt::Checked){
-        for(int index = 0; (child = parent->child(index)) != 0 ; ++index){
+        for(int index = 0; (child = parent->child(index)) != nullptr ; ++index){
             if(child != option){
                 child->setCheckState(Qt::Unchecked);
             }
@@ -563,8 +558,8 @@ void MainWindow::updateOptionSelector(QStandardItem* option){
 }
 void MainWindow::fitContent(const QModelIndex& index){
     QStandardItem* item = treeModel->itemFromIndex(index);
-    if(item->child(0) != 0 && item->child(0)->child(0) != 0){
-        if(item->child(0)->child(0) != 0){
+    if(item->child(0) != nullptr && item->child(0)->child(0) != nullptr){
+        if(item->child(0)->child(0) != nullptr){
             treeView->resizeColumnToContents(0);
         }else{
             treeView->resizeColumnToContents((int)DataRow::Result::PRODUCTNAME + 1);
@@ -576,9 +571,9 @@ void MainWindow::fitContent(const QModelIndex& index){
 void MainWindow::setCheckStateForOptionItems(QStandardItem* item, bool& uncheckParent){
     QStandardItem* child;
     bool optionSelected = false;
-    for(int i = 0; (child = item->child(i)) != 0; ++i){
+    for(int i = 0; (child = item->child(i)) != nullptr; ++i){
         if(child->checkState() == Qt::Checked){//surandam pasirinkta opcija
-            for(int j = 0; child->child(j) != 0; ++j){//(at)zymim visus elementus
+            for(int j = 0; child->child(j) != nullptr; ++j){//(at)zymim visus elementus
                 child->child(j)->setCheckState(item->checkState());
                 optionSelected = true;
             }
@@ -589,7 +584,7 @@ void MainWindow::setCheckStateForOptionItems(QStandardItem* item, bool& uncheckP
             if(options.optionAll == item->child(0) ||
                     options.optionNew == item->child(0)){//surandam, kuri opcija
                 options.optionAll->setCheckState(Qt::Checked);
-                for(int j = 0; options.optionAll->child(j) != 0; ++j){//zymim visus elementus
+                for(int j = 0; options.optionAll->child(j) != nullptr; ++j){//zymim visus elementus
                     options.optionAll->child(j)->setCheckState(Qt::Checked);
                 }
             }
@@ -601,8 +596,8 @@ void MainWindow::setCheckStateForOptionItems(QStandardItem* item, bool& uncheckP
 }
 
 bool MainWindow::noOptionSelected(QStandardItem* item){
-    for(int i = 0; item->child(i) != 0; ++i){//iteruojam per menesio elementus
-        for(int j = 0; item->child(i)->child(j) != 0; ++j){//iteruojam per menesio opcijas
+    for(int i = 0; item->child(i) != nullptr; ++i){//iteruojam per menesio elementus
+        for(int j = 0; item->child(i)->child(j) != nullptr; ++j){//iteruojam per menesio opcijas
             if(item->child(i)->child(j)->checkState() == Qt::Checked){
                 return false;
             }
@@ -631,7 +626,7 @@ void MainWindow::checkDefaultOptions(QStandardItem* root){
     }
 
     QStandardItem* monthItem;
-    for(int i = 0; (monthItem = root->child(i)) != 0; ++i){
+    for(int i = 0; (monthItem = root->child(i)) != nullptr; ++i){
         monthItem->setCheckState(Qt::Checked);
     }
 }
@@ -649,7 +644,7 @@ int MainWindow::getOptionSheetIndex(QStandardItem* item){
 void MainWindow::uncheckOption(QStandardItem* option){
     option->setCheckState(Qt::Unchecked);
 
-    for(int i = 0; option->child(i) != 0; ++i){//atzymim opcijos vaikus
+    for(int i = 0; option->child(i) != nullptr; ++i){//atzymim opcijos vaikus
         option->child(i)->setCheckState(Qt::Unchecked);
     }
 }
@@ -687,7 +682,7 @@ void MainWindow::setupRootItem(QStandardItem* rootItem, int mapIndex){
 void MainWindow::uncheckOtherOptions(QStandardItem* item){
     QStandardItem* parent = item->parent();
     QStandardItem* child;
-    for(int i = 0; (child = parent->child(i)) != 0; ++i){
+    for(int i = 0; (child = parent->child(i)) != nullptr; ++i){
         if(child != item){
             child->setCheckState(Qt::Unchecked);
         }
@@ -731,7 +726,7 @@ int MainWindow::adjustSelectionCounters(QModelIndex monthIndex, int increase, bo
 
 void MainWindow::setParentsPartiallyChecked(QStandardItem* child){
     QStandardItem* parent = child;
-    for(int i = 0; (parent = parent->parent()) != 0; ++i){
+    for(int i = 0; (parent = parent->parent()) != nullptr; ++i){
         parent->setCheckState(Qt::PartiallyChecked);
     }
 }
@@ -753,7 +748,7 @@ void MainWindow::changeOption(QStandardItem* option){
 
     }else if(option->checkState() == Qt::Checked){
         uncheckOtherOptions(option);
-        for(int i = 0; (child = option->child(i)) != 0; ++i){//check current items
+        for(int i = 0; (child = option->child(i)) != nullptr; ++i){//check current items
             lockChildren = true;
             child->setCheckState(Qt::Checked);
         }
@@ -764,7 +759,7 @@ void MainWindow::changeOption(QStandardItem* option){
         }
 
     }else if(option->checkState() == Qt::Unchecked){
-        for(int i = 0; (child = option->child(i)) != 0; ++i){
+        for(int i = 0; (child = option->child(i)) != nullptr; ++i){
             lockChildren = true;
             child->setCheckState(Qt::Unchecked);
         }
@@ -884,7 +879,7 @@ void MainWindow::changeRoot(QStandardItem* item){
             item->checkState() == Qt::Unchecked) && !onlyChangeParent){
         QStandardItem* child;
         disableChangeParent = true;
-        for(int i = 0; (child = item->child(i)) != 0; ++i){
+        for(int i = 0; (child = item->child(i)) != nullptr; ++i){
             child->setCheckState(item->checkState());
         }
         disableChangeParent = false;

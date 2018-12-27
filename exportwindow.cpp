@@ -7,6 +7,10 @@
 
 ExportWindow::ExportWindow(QStringList genOptions, QWidget *parent) : QDialog(parent)
 {
+    //formuojam opcija kelti i gen faila
+    optionExportToGen = new QCheckBox(textExportToGenFile);
+    optionExportToGen->setCheckState(Qt::Checked);
+    connect(optionExportToGen, SIGNAL(stateChanged(int)), this, SLOT(showGenFileSelection(int)));
 
     //gen failo opcijos UI
     genSelectionText = new QLabel(text1);
@@ -14,8 +18,7 @@ ExportWindow::ExportWindow(QStringList genOptions, QWidget *parent) : QDialog(pa
     genSelection->addItems(genOptions);
 
     //eip failo pasirinkimo UI
-    optionCheckFiles = new QCheckBox(text2);
-    connect(optionCheckFiles, SIGNAL(stateChanged(int)), this, SLOT(changeFileSelectVisability(int)));
+    //connect(optionCheckFiles, SIGNAL(stateChanged(int)), this, SLOT(changeFileSelectVisability(int)));
 
     //testi UI
     continueButton = new QPushButton(text5);
@@ -27,6 +30,7 @@ ExportWindow::ExportWindow(QStringList genOptions, QWidget *parent) : QDialog(pa
     setLayout(mainLayout);
 
     createLayout();
+    optionExportToGen->setCheckState(Qt::Unchecked);
 }
 
 ExportWindow::~ExportWindow(){
@@ -34,16 +38,25 @@ ExportWindow::~ExportWindow(){
 }
 
 void ExportWindow::createLayout(){
+    mainLayout->addWidget(optionExportToGen);
+
     QHBoxLayout* genOptionLayout = new QHBoxLayout;
     genOptionLayout->addWidget(genSelectionText);
     genOptionLayout->addWidget(genSelection);
-
     mainLayout->addLayout(genOptionLayout);
 
-    mainLayout->addWidget(optionCheckFiles);
     mainLayout->addWidget(continueButton, 0, Qt::AlignCenter);
 }
 
+void ExportWindow::showGenFileSelection(int state){
+    if(state == Qt::Checked){
+        genSelection->show();
+        genSelectionText->show();
+    }else if (state == Qt::Unchecked){
+        genSelection->hide();
+        genSelectionText->hide();
+    }
+}
 void ExportWindow::changeFileSelectVisability(int state){
     if(state == Qt::Checked){//sukuriam pasirinkima
         eipFileSelectionText = new QLabel(text3);
@@ -70,7 +83,7 @@ void ExportWindow::changeFileSelectVisability(int state){
 }
 
 void ExportWindow::reset(){
-    optionCheckFiles->setCheckState(Qt::Unchecked);
+    optionExportToGen->setCheckState(Qt::Unchecked);
     genSelection->setCurrentIndex(0);
 }
 
@@ -98,16 +111,23 @@ void ExportWindow::selectFile(){
 }
 
 void ExportWindow::continuePressed(){
-    if(optionCheckFiles->checkState() == Qt::Checked && !selectedFileLine->text().isEmpty()){
+    /*if(optionCheckFiles->checkState() == Qt::Checked && !selectedFileLine->text().isEmpty()){
         genSelectionIndex = genSelection->currentIndex();
         performFileCheck = true;
-        emit passControlToMain();
+        success = true;
         close();
     }else if(optionCheckFiles->checkState() == Qt::Checked && selectedFileLine->text().isEmpty()){
         QMessageBox::information(this, "Klaida", "Nepasirinkta failas");
-    }else if(optionCheckFiles->checkState() == Qt::Unchecked){
+
+    }*/
+
+    if(optionExportToGen->checkState() == Qt::Checked){
         genSelectionIndex = genSelection->currentIndex();
-        emit passControlToMain();
+        success = true;
+        exportToGen = true;
+        close();
+    }else if(optionExportToGen->checkState() == Qt::Unchecked){
+        success = true;
         close();
     }
 }

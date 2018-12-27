@@ -35,13 +35,13 @@ SheetInfo FileReader::readSheetInfo(QXlsx::Document& file){
     while(1){
         QString data = file.read(1, currentColumn).toString().trimmed();
         if(!data.isEmpty()){
-            if(data.contains( (char)dtp.SymbolMap::CODE) ){
+            if(data.contains( (char)DataRowPart::SymbolMap::CODE) ){
                 sheetInfo.codeColumn = currentColumn;
                 Parser::parseSheetInfo(data,sheetInfo);
             }
-            else if(data.contains( (char)dtp.SymbolMap::NAME) ){
+            else if(data.contains( (char)DataRowPart::SymbolMap::NAME) ){
                 sheetInfo.nameColumn = currentColumn;
-            }else if(data.contains( (char)dtp.SymbolMap::MAKER) ){
+            }else if(data.contains( (char)DataRowPart::SymbolMap::MAKER) ){
                 sheetInfo.makerColumn = currentColumn;
             }
 
@@ -204,8 +204,27 @@ int FileReader::readBlockRows(const SheetInfo& sheetInfo, int currentColumn,
         cellData1.clear();
         cellData2.clear();
     }
-    sortDataByName(allBlockRows);
-    sortDataByName(newBlockRows);
+    if(newBlockRows.empty()){//sutavrko problema, kai kazkuriam menesy nera nauju elementu ir neiterpiama eilute.
+        std::vector<QString> empty;
+        for(int i = 0; i < 7; ++i){//7 DataRow::Input dydis
+            empty.push_back("");
+        }
+        newBlockRows.push_back(empty);
+    }else{
+        sortDataByName(newBlockRows);
+    }
+    if(allBlockRows.empty()){
+        std::vector<QString> empty;
+        for(int i = 0; i < 7; ++i){//7 DataRow::Input dydis
+            empty.push_back("");
+        }
+        allBlockRows.push_back(empty);
+    }else{
+        sortDataByName(allBlockRows);
+
+    }
+
+
     return columnsRead - namingScheme.size();
 }
 

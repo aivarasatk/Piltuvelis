@@ -10,8 +10,15 @@ FileWriter::FileWriter(std::vector<QString> eipTemplateV,
 
 }
 
-QString FileWriter::writeSelectedDataToFile(std::vector<DataFromSheet>& sheetData,
-                                         const QStandardItemModel *treeModel, QString fileName){
+QString FileWriter::writeDataToFile(std::vector<DataFromSheet>& sheetData,
+                                    const QStandardItemModel *treeModel, QString fileName, QString genCode){
+    if(genCode != nullptr){
+        writeToGenExport = true;
+        genExportCode = genCode;
+    }else{
+        writeToGenExport = false;
+        genExportCode = "KLAIDA";
+    }
     file.setFileName(fileName);
     if(file.open(QIODevice::WriteOnly)){
         QString failedSheetMonths = "";
@@ -52,10 +59,10 @@ QString FileWriter::analyzeSheetData(DataFromSheet& sheetData,
                                   QStandardItem* root){
     QString failedMonths = "";
     QStandardItem* monthItem;
-    for(int i = 0; (monthItem = root->child(i)) != 0; ++i){//einam per menesius
+    for(int i = 0; (monthItem = root->child(i)) != nullptr; ++i){//einam per menesius
         if(monthItem->checkState() == Qt::Checked){//irasysim visa menesi
             QStandardItem* option;
-            for(int j = 0; (option = monthItem->child(j)) != 0; ++j){//einam per pasirinkimus
+            for(int j = 0; (option = monthItem->child(j)) != nullptr; ++j){//einam per pasirinkimus
                 if(option->checkState() == Qt::Checked){
                     QString writeResult = "";
                     if(j == Options::ALL){//irasom visus menesio irasus
@@ -74,7 +81,7 @@ QString FileWriter::analyzeSheetData(DataFromSheet& sheetData,
         }else if(monthItem->checkState() == Qt::PartiallyChecked){//irasom dalinai pazymeta menesi
             QStandardItem* option;
             QString writeResult = "";
-            for(int j = 0; (option = monthItem->child(j)) != 0; ++j){
+            for(int j = 0; (option = monthItem->child(j)) != nullptr; ++j){
                 if(option->checkState() != Qt::Unchecked && j == Options::ALL){
                     auto dataPair = getMonthPair(sheetData.allDataBlock, i);
                     writeResult = analyzeMonthData(dataPair, option);
@@ -114,10 +121,10 @@ QString FileWriter::writeSheetData(DataFromSheet& singleSheetData,
                                 QStandardItem* root){
     QString failedMonths = "";
     QStandardItem* monthItem;
-    for(int i = 0; (monthItem = root->child(i)) != 0; ++i){
+    for(int i = 0; (monthItem = root->child(i)) != nullptr; ++i){
         if(monthItem->checkState() == Qt::Checked){
             QStandardItem* option;
-            for(int j = 0; (option = monthItem->child(j)) != 0; ++j){
+            for(int j = 0; (option = monthItem->child(j)) != nullptr; ++j){
                 if(option->checkState() == Qt::Checked){
                     QString monthWriteResult = "";
                     if(j == Options::ALL){
@@ -159,7 +166,12 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
 
     itemBlock += "<I07>\n";//iraso pradzia
 
-    appendDataBlock(itemBlock, eipTemplate[EipID::OPERATIONCODE], operationCode);
+    if(!writeToGenExport){
+        appendDataBlock(itemBlock, eipTemplate[EipID::OPERATIONCODE], operationCode);
+    }else{
+        appendDataBlock(itemBlock, eipTemplate[EipID::OPERATIONCODE], genExportCode);
+    }
+
     appendDataBlock(itemBlock, eipTemplate[EipID::CODE], rowData[(int)DataRow::Result::PRODUCTCODE]);
     appendDataBlock(itemBlock, eipTemplate[EipID::AMOUNT], rowData[(int)DataRow::Result::PRODUCTAMOUNT]);
     appendDataBlock(itemBlock, eipTemplate[EipID::MAKER], rowData[(int)DataRow::Result::PRODUCTMAKER]);
@@ -219,6 +231,16 @@ QStringList FileWriter::getGenSelection(){
     for(auto& pair: idData){
         if(pair.first.contains("GEN")){
             list << pair.first;
+        }
+    }
+    return list;
+}
+
+QStringList FileWriter::getGenCodes(){
+    QStringList list;
+    for(auto& pair: idData){
+        if(pair.first.contains("GEN")){
+            list << pair.second;
         }
     }
     return list;
