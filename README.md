@@ -11,3 +11,4 @@ Required files(not present in the repository):
 When a new order for a product is created firstly its documented in an excel file. To upload it to the database each order has to be entered separately so to make it more convenient the program searches through the excel file and finds new orders and displays them in a tree hierarchy. The user can then select which orders to export to .eip file and import it to the database.
 
 ![Start](screens/pradzia.png)
+![Visual](screens/demo3.png)
