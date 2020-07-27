@@ -102,19 +102,16 @@ QString FileWriter::analyzeMonthData(std::pair<const HeaderDate, std::vector<std
                                   QStandardItem* monthTreeItem){
 
     QString operationCode = Parser::operationCode(monthItem.first, idData);
-   // qDebug() << operationCode;
     for(uint h = 0; h < monthItem.second.size(); ++h){
         if(monthTreeItem->child(h)->checkState() == Qt::Checked){//rasom viena irasa
 
-            if(!operationCode.isEmpty()){
-                writeItemData(monthItem.second[h], operationCode, monthTreeItem, h);
-            }else{
+            if(!operationCode.isEmpty())
+                 writeItemData(monthItem.second[h], operationCode, monthTreeItem, h);
+            else
                 return QString(monthItem.first.monthString + QString::number(monthItem.first.year) + '\n');
-            }
         }
     }
     return "";
-
 }
 
 QString FileWriter::writeSheetData(DataFromSheet& singleSheetData,
@@ -176,8 +173,12 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
     appendDataBlock(itemBlock, eipTemplate[EipID::AMOUNT], rowData[(int)DataRow::Result::PRODUCTAMOUNT]);
     appendDataBlock(itemBlock, eipTemplate[EipID::MAKER], rowData[(int)DataRow::Result::PRODUCTMAKER]);
 
-    appendDataBlock(itemBlock, eipTemplate[EipID::DATE],
-            item->child(child,(int)DataRow::Result::PRODUCTDATE + 1)->text());
+    QString productionDate = item->child(child,(int)DataRow::Result::PRODUCTDATE + 1)->text();
+    if(defaultGeneratedDate(productionDate))
+        appendDataBlock(itemBlock, eipTemplate[EipID::DATE], productionDate);
+    else
+        appendDataBlock(itemBlock, eipTemplate[EipID::DIMDATE], productionDate);
+
     appendDataBlock(itemBlock, eipTemplate[EipID::DETAILS],
             item->child(child,(int)DataRow::Result::PRODUCTCOMMENTS + 1)->text());
 
@@ -190,6 +191,11 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
     QTextStream out(&file);
     out << itemBlock;
     out.flush();
+}
+
+bool FileWriter::defaultGeneratedDate(QString date)
+{
+    return date.split("-")[2] == "07" || date.split("-")[2] == "22";
 }
 
 void FileWriter::appendDataBlock(QString& itemBlock,QString exportRow,const QString& value){

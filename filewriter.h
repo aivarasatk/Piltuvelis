@@ -31,6 +31,8 @@ public:
     QStringList getGenSelection();
     QStringList getGenCodes();
 
+    bool defaultGeneratedDate(QString date);
+
 private:
     std::vector<QString> eipTemplate;
     std::map<QString, QString> idData;
@@ -38,7 +40,7 @@ private:
     bool writeToGenExport = false;
     QString genExportCode = "";
 
-    enum EipID{OPERATIONCODE = 0, CODE = 1, AMOUNT = 2, MAKER = 3, DATE = 4, DETAILS = 5, COST = 6};
+    enum EipID{OPERATIONCODE = 0, CODE = 1, AMOUNT = 2, MAKER = 3, DATE = 4, DETAILS = 5, COST = 6, DIMDATE = 7};
     enum Options{ALL = 0, NEW = 1};
 };
 
