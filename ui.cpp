@@ -355,7 +355,6 @@ void MainWindow::createTreeView(std::vector<int> selectedSheetsIndexes){
     headerList << "Skyrius" << "Kodas" << "Pavadinimas" << "Padalinys" << "Kiekis" << "Data" << "Pastabos";
     treeModel->setHorizontalHeaderLabels(headerList);
 
-    //std::vector<QFuture<void>> workerSheets;
     for(uint i = 0; i < selectedSheetsIndexes.size(); ++i){
         QStandardItem* root = treeModel->invisibleRootItem();
         QStandardItem* rootItem = new QStandardItem(sheetCheckBoxes[selectedSheetsIndexes[i]]->text());
@@ -380,7 +379,6 @@ void MainWindow::checkItemChildren(QStandardItem* item){
     if(item->isCheckable() && !item->hasChildren() && item->parent() != nullptr){
         if(item->checkState() == Qt::Checked){//atztmim, kitas opcijas
             uncheckOtherOptions(item->parent());//paduodam opcijos adresa.
-            //setParentsPartiallyChecked(item);
             int checkedItems = adjustSelectionCounters(item->parent()->parent()->index(), 1, isOptionAll(item->parent()));
             if(!lockChildren){
                 changeParent(parentChangeCode(item->parent()->rowCount(), checkedItems), item);
@@ -390,9 +388,6 @@ void MainWindow::checkItemChildren(QStandardItem* item){
             int checkedItems = adjustSelectionCounters(item->parent()->parent()->index(), -1, isOptionAll(item->parent()));
             if(!lockChildren){
                 changeParent(parentChangeCode(item->parent()->rowCount(), checkedItems), item);
-                /*if(checkedItems != 0){
-                    setParentsPartiallyChecked(item);
-                }*/
             }
 
         }

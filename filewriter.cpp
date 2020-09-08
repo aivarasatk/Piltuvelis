@@ -174,10 +174,8 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
     appendDataBlock(itemBlock, eipTemplate[EipID::MAKER], rowData[(int)DataRow::Result::PRODUCTMAKER]);
 
     QString productionDate = item->child(child,(int)DataRow::Result::PRODUCTDATE + 1)->text();
-    if(defaultGeneratedDate(productionDate))
-        appendDataBlock(itemBlock, eipTemplate[EipID::DATE], productionDate);
-    else
-        appendDataBlock(itemBlock, eipTemplate[EipID::DIMDATE], productionDate);
+
+    appendDataBlock(itemBlock, eipTemplate[EipID::DATE], productionDate);
 
     appendDataBlock(itemBlock, eipTemplate[EipID::DETAILS],
             item->child(child,(int)DataRow::Result::PRODUCTCOMMENTS + 1)->text());

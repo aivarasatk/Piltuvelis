@@ -254,17 +254,15 @@ bool FileReader::readIdentificationFile(QString fileName, std::map<QString, QStr
     return true;
 }
 void FileReader::setDefaultDate(std::vector<QString>& rowData, QString header){
-    if(rowData[(int)DataRow::Input::PRODUCTDATE].isEmpty()){
-        HeaderDate headerDate;
-        Parser::parseBlockHeader(header, headerDate);
-        if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT1].isEmpty()){
-            rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-07";
-            if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT2].isEmpty()){
-                rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-15";
-            }
-        }else if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT2].isEmpty()){
-            rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-22";
+    HeaderDate headerDate;
+    Parser::parseBlockHeader(header, headerDate);
+    if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT1].isEmpty()){
+        rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-07";
+        if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT2].isEmpty()){
+            rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-15";
         }
+    }else if(!rowData[(int)DataRow::Input::PRODUCTAMOUNT2].isEmpty()){
+        rowData[(int)DataRow::Input::PRODUCTDATE] = QString::number(headerDate.year) + "-" + headerDate.monthShortString + "-22";
     }
 
 }
