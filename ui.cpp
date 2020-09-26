@@ -210,20 +210,30 @@ int MainWindow::visualizeData(QString& treeCreationDataError){
     }
     for(uint i = 0; i < selectedSheetsIndexes.size(); ++i){
         DataFromSheet dataFromSheet;
-        if(fileReader.readExcel(fileSelection.getDataFileName(),
-                                 dataFromSheet.allDataBlock,
-                                 dataFromSheet.newDataBlock,
-                                 selectedSheetsIndexes[i])){
+        try {
+            if(fileReader.readExcel(fileSelection.getDataFileName(),
+                                     dataFromSheet.allDataBlock,
+                                     dataFromSheet.newDataBlock,
+                                     selectedSheetsIndexes[i])){
 
-            sheetData.push_back(dataFromSheet);
-            auto& amountErrors = fileReader.getExcelErrors();
-            if(amountErrors.size() != 0){
-                formAmountErrorMessage(amountErrors, treeCreationDataError);
+                sheetData.push_back(dataFromSheet);
+                auto& amountErrors = fileReader.getExcelErrors();
+                if(amountErrors.size() != 0){
+                    formAmountErrorMessage(amountErrors, treeCreationDataError);
+                }
+            }else{
+                sheetData.clear();
+                return TreeCreateError::FAILED_TO_READ_GEN_DATA;
             }
-        }else{
-            sheetData.clear();
-            return TreeCreateError::FAILED_TO_READ_GEN_DATA;
+        } catch (QString& ex) {
+            QMessageBox::warning(this, "Duomenų klaida", QString("Klaida nuskaitant %1.\n%2").arg(sheetCheckBoxes[i]->text(), ex));
+            return TreeCreateError::ALL_GOOD;
         }
+        catch(...){
+            QMessageBox::critical(this, "Duomenų klaida", "Įvyko nenumatyta klaida nuskaitant duomenis");
+            return TreeCreateError::ALL_GOOD;
+        }
+
     }
 
     if(!treeCreationDataError.isEmpty()){
@@ -352,7 +362,7 @@ QString MainWindow::terminateSearch(std::vector<std::vector<Duplicate>>& duplica
 
 void MainWindow::createTreeView(std::vector<int> selectedSheetsIndexes){
     QStringList headerList;
-    headerList << "Skyrius" << "Kodas" << "Pavadinimas" << "Padalinys" << "Kiekis" << "Data" << "Pastabos";
+    headerList << "Skyrius" << "Kodas" << "Pavadinimas" << "Padalinys" << "Kiekis" << "Data" << "Pastabos" << "DIM data";
     treeModel->setHorizontalHeaderLabels(headerList);
 
     for(uint i = 0; i < selectedSheetsIndexes.size(); ++i){

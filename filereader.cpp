@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include <QDebug>
+#include <QDate>
 
 #include <chrono>
 using Clock=std::chrono::high_resolution_clock;
@@ -192,6 +193,7 @@ int FileReader::readBlockRows(const SheetInfo& sheetInfo, int currentColumn,
            !cellData1[(int)DataRow::Input::PRODUCTAMOUNT2]->data.isEmpty()){//jei netusti kiekio stulpeliai
             std::vector<QString> rowData;
             setDataFromCell(cellData1, rowData);//extractinam stringus is cell
+            includeDimDate(rowData);
             setDefaultDate(rowData,file.read(sheetInfo.blockHeader, currentColumn).toString().trimmed());
             removeAmountField(rowData, currentMonthErrors);
             allBlockRows.push_back(rowData);
@@ -253,6 +255,27 @@ bool FileReader::readIdentificationFile(QString fileName, std::map<QString, QStr
     }
     return true;
 }
+
+void FileReader::includeDimDate(std::vector<QString> &rowData){
+    if(rowData[(int)DataRow::Input::PRODUCTDATE].isEmpty())
+        rowData.push_back("");
+    else
+    {
+        QString formattedDate = rowData[(int)DataRow::Input::PRODUCTDATE].replace('.', '-');
+
+        QDate date = QDate::fromString(formattedDate, "yyyy-MM-dd");
+        if(!date.isValid() || date.year() == 1900)//default invalid date case
+        {
+            QString rowValues = "";
+            for(auto& v: rowData)
+                rowValues.append(v).append('\n');
+            throw QString("Klaida nustatant DIM data. Eilutes informacija: \n%1").arg(rowValues);
+        }
+
+        rowData.push_back(formattedDate);
+    }
+}
+
 void FileReader::setDefaultDate(std::vector<QString>& rowData, QString header){
     HeaderDate headerDate;
     Parser::parseBlockHeader(header, headerDate);

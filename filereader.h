@@ -46,6 +46,7 @@ private:
 
 
 
+    void includeDimDate(std::vector<QString>& rowData);
     void setDefaultDate(std::vector<QString>& rowData, QString header);
     void removeAmountField(std::vector<QString>& rowData, ExcelMonthErrors &errors);
     std::vector<NamingScheme> getNamingScheme(QString fileName);

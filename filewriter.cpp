@@ -177,6 +177,9 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
 
     appendDataBlock(itemBlock, eipTemplate[EipID::DATE], productionDate);
 
+    if(!rowData[(int)DataRow::Result::DIMDATE].isEmpty())
+        appendDataBlock(itemBlock, eipTemplate[EipID::DIMDATE], rowData[(int)DataRow::Result::DIMDATE]);
+
     appendDataBlock(itemBlock, eipTemplate[EipID::DETAILS],
             item->child(child,(int)DataRow::Result::PRODUCTCOMMENTS + 1)->text());
 
