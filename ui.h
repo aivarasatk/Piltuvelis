@@ -98,7 +98,8 @@ private:
     bool checkForDuplicates(std::map<HeaderDate, std::vector<std::vector<QString> > > &sheet1,
                             std::map<HeaderDate, std::vector<std::vector<QString> > > &sheet2,
                             std::vector<Duplicate> &duplicate);
-    QString terminateSearch(std::vector<std::vector<Duplicate>>& duplicates);
+    QString terminateSearchDueToDuplicate(std::vector<std::vector<Duplicate>>& duplicates);
+    bool bothEmpty(std::vector<QString> blockData1,std::vector<QString> blockData2);
 
     void createTreeView(std::vector<int> selectedSheetsIndexes);
     QStandardItem *addMonthOption(QStandardItem* monthItem, QString text, int& childCount);

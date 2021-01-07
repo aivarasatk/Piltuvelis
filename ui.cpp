@@ -244,7 +244,7 @@ int MainWindow::visualizeData(QString& treeCreationDataError){
 
     std::vector<std::vector<Duplicate>> duplicates;
     if(!checkSheetData(duplicates)){
-        treeCreationDataError = terminateSearch(duplicates);
+        treeCreationDataError = terminateSearchDueToDuplicate(duplicates);
         return TreeCreateError::DUPLICATE_EXISTANCE;
     }else{
         createTreeView(selectedSheetsIndexes);
@@ -316,7 +316,8 @@ bool MainWindow::checkForDuplicates(std::map<HeaderDate, std::vector<std::vector
         for(auto& sheetBlock2: sheet2){
             for(auto& blockData: sheetBlock1.second){
                 for(auto& blockData2: sheetBlock2.second){//tikrinam bloku kodus
-                    if(blockData[(int)DataRow::Result::PRODUCTCODE] == blockData2[(int)DataRow::Result::PRODUCTCODE]){
+                    if(blockData[(int)DataRow::Result::PRODUCTCODE] == blockData2[(int)DataRow::Result::PRODUCTCODE]
+                            && !bothEmpty(blockData, blockData2)){
                         Duplicate tempStruct;
 
                         std::pair<HeaderDate, std::vector<QString> > tempData, tempData2;
@@ -339,17 +340,33 @@ bool MainWindow::checkForDuplicates(std::map<HeaderDate, std::vector<std::vector
     return true;
 }
 
-QString MainWindow::terminateSearch(std::vector<std::vector<Duplicate>>& duplicates){
-    QString errorMessage = "";
+//If two sheets have a block completely empty one entry is still stored and that's how a phantom empty error appears.
+//This is a hack around
+bool MainWindow::bothEmpty(std::vector<QString> blockData1,std::vector<QString> blockData2){
+    for(auto& value: blockData1){
+        if(!value.isEmpty())
+            return false;
+    }
+
+    for(auto& value: blockData2){
+        if(!value.isEmpty())
+            return false;
+    }
+
+    return true;
+}
+
+QString MainWindow::terminateSearchDueToDuplicate(std::vector<std::vector<Duplicate>>& duplicates){
+    QString errorMessage = "Rasti dubliai:\n";
     for(auto& duplicate: duplicates){
         for(auto& item: duplicate){
-            errorMessage += QString::number(item.sheet1.first.year) + " " + item.sheet1.first.monthString + " ";
+            errorMessage += QString::number(item.sheet1.first.year) + " " + item.sheet1.first.monthString + " Reikšmės: ";
             for(auto& string: item.sheet1.second){
                 errorMessage += string + " ";
             }
             errorMessage += '\n';
 
-            errorMessage += QString::number(item.sheet2.first.year) + " " + item.sheet2.first.monthString + " ";
+            errorMessage += QString::number(item.sheet2.first.year) + " " + item.sheet2.first.monthString + " Reikšmės: ";
             for(auto& string: item.sheet2.second){
                 errorMessage += string + " ";
             }
