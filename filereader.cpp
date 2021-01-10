@@ -256,7 +256,8 @@ bool FileReader::readIdentificationFile(QString fileName, std::map<QString, QStr
     return true;
 }
 
-void FileReader::includeDimDate(std::vector<QString> &rowData){
+void FileReader::includeDimDate(std::vector<QString> &rowData)
+{
     if(rowData[(int)DataRow::Input::PRODUCTDATE].isEmpty())
         rowData.push_back("");
     else

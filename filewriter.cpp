@@ -173,12 +173,12 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
     appendDataBlock(itemBlock, eipTemplate[EipID::AMOUNT], rowData[(int)DataRow::Result::PRODUCTAMOUNT]);
     appendDataBlock(itemBlock, eipTemplate[EipID::MAKER], rowData[(int)DataRow::Result::PRODUCTMAKER]);
 
-    QString productionDate = item->child(child,(int)DataRow::Result::PRODUCTDATE + 1)->text();
+    QString productionDate = standartizedDate(item->child(child,(int)DataRow::Result::PRODUCTDATE + 1)->text());
 
     appendDataBlock(itemBlock, eipTemplate[EipID::DATE], productionDate);
 
     if(!rowData[(int)DataRow::Result::DIMDATE].isEmpty())
-        appendDataBlock(itemBlock, eipTemplate[EipID::DIMDATE], rowData[(int)DataRow::Result::DIMDATE]);
+        appendDataBlock(itemBlock, eipTemplate[EipID::DIMDATE], standartizedDate(rowData[(int)DataRow::Result::DIMDATE]));
 
     appendDataBlock(itemBlock, eipTemplate[EipID::DETAILS],
             item->child(child,(int)DataRow::Result::PRODUCTCOMMENTS + 1)->text());
@@ -194,9 +194,9 @@ void FileWriter::writeItemData(std::vector<QString> rowData, QString operationCo
     out.flush();
 }
 
-bool FileWriter::defaultGeneratedDate(QString date)
+QString FileWriter::standartizedDate(QString date)
 {
-    return date.split("-")[2] == "07" || date.split("-")[2] == "22";
+    return date.replace('-', '.');
 }
 
 void FileWriter::appendDataBlock(QString& itemBlock,QString exportRow,const QString& value){

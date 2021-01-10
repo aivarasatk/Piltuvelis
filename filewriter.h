@@ -31,7 +31,7 @@ public:
     QStringList getGenSelection();
     QStringList getGenCodes();
 
-    bool defaultGeneratedDate(QString date);
+    QString standartizedDate(QString date);
 
 private:
     std::vector<QString> eipTemplate;
